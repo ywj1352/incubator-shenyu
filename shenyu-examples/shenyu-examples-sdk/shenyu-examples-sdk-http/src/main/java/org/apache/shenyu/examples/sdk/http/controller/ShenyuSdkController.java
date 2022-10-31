@@ -15,32 +15,48 @@
  * limitations under the License.
  */
 
-package org.apache.shenyu.examples.sdk.http.api;
+package org.apache.shenyu.examples.sdk.http.controller;
 
 import org.apache.shenyu.common.dto.PluginData;
+import org.apache.shenyu.examples.sdk.http.api.ShenyuSdkApi;
 import org.apache.shenyu.examples.sdk.http.dto.SelectorRulesData;
 import org.apache.shenyu.examples.sdk.http.dto.ShenyuServerResponse;
-import org.apache.shenyu.sdk.spring.ShenyuClient;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
 
 /**
- * ShenyuSdkApi.
+ * ShenyuSdkService.
  */
-@ShenyuClient(contextId = "ShenyuSdkApiExample", name = "ShenyuSdkApiName")
-public interface ShenyuSdkApi {
+@RestController
+@RequestMapping("/shenyu-sdk")
+public class ShenyuSdkController {
+
+    @Resource
+    private ShenyuSdkApi sdkApi;
 
     /**
-     * call shenyu plugin selectorAndRules.
+     *  call shenyu selectorRule.
      *
-     * @param selectorRulesData request
+     * @param selectorRulesRequest selectorRulesRequest
      * @return response
      */
-    @PostMapping("/shenyu/plugin/selectorAndRules")
-    ShenyuServerResponse selectorAndRules(@RequestBody SelectorRulesData selectorRulesData);
+    @PostMapping("/selectorRule")
+    public ShenyuServerResponse callShenyuSelectorRule(SelectorRulesData selectorRulesRequest) {
+        return sdkApi.selectorAndRules(selectorRulesRequest);
+    }
 
-
-    @PostMapping("/shenyu/plugin/saveOrUpdate")
-    ShenyuServerResponse saveOrUpdate(@RequestBody PluginData pluginData);
+    /**
+     * call shenyu saveOrUpdate.
+     *
+     * @param pluginData pluginData
+     * @return response
+     */
+    @PostMapping("/saveOrUpdate")
+    public ShenyuServerResponse callShenyuSaveOrUpdate(PluginData pluginData) {
+        return sdkApi.saveOrUpdate(pluginData);
+    }
 
 }

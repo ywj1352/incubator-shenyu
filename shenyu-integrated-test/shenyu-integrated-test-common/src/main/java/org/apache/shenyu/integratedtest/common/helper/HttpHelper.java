@@ -58,7 +58,7 @@ public class HttpHelper {
     private static final Gson GSON = new Gson();
 
     private final OkHttpClient client = new OkHttpClient.Builder().build();
-    
+
     private final String localKey = "123456";
 
     /**
@@ -171,12 +171,18 @@ public class HttpHelper {
     }
 
     private <Q> String post(final String path, final Map<String, Object> headers, final Q req) throws IOException {
-        Request.Builder requestBuilder = new Request.Builder().post(RequestBody.create(GSON.toJson(req), JSON)).url(GATEWAY_END_POINT + path).addHeader(Constants.LOCAL_KEY, localKey);
+        Response response = postHttpService(GATEWAY_END_POINT + path, headers, req);
+        String respBody = Objects.requireNonNull(response.body()).string();
+        LOG.info("getHttpService({}) resp({})", path, respBody);
+        return respBody;
+    }
+
+    private <Q> Response postHttpService(final String url, final Map<String, Object> headers, final Q req) throws IOException {
+        Request.Builder requestBuilder = new Request.Builder().post(RequestBody.create(GSON.toJson(req), JSON)).url(url).addHeader(Constants.LOCAL_KEY, localKey);
         if (!CollectionUtils.isEmpty(headers)) {
             headers.forEach((key, value) -> requestBuilder.addHeader(key, String.valueOf(value)));
         }
-        Response response = client.newCall(requestBuilder.build()).execute();
-        return Objects.requireNonNull(response.body()).string();
+        return client.newCall(requestBuilder.build()).execute();
     }
 
     /**
@@ -279,6 +285,17 @@ public class HttpHelper {
         Response response = getHttpService(path, headers);
         String respBody = Objects.requireNonNull(response.body()).string();
         LOG.info("getHttpService({}) resp({})", path, respBody);
+        try {
+            return GSON.fromJson(respBody, type);
+        } catch (Exception e) {
+            return (S) respBody;
+        }
+    }
+
+    public <S, R> S postHttpService(final String url, final Map<String, Object> headers, R req, final Type type) throws IOException {
+        Response response = postHttpService(url, headers, req);
+        String respBody = Objects.requireNonNull(response.body()).string();
+        LOG.info("getHttpService({}) resp({})", url, respBody);
         try {
             return GSON.fromJson(respBody, type);
         } catch (Exception e) {
