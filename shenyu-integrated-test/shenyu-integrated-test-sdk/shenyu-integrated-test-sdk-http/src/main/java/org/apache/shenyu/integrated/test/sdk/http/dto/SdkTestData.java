@@ -22,7 +22,7 @@ import java.util.StringJoiner;
 /**
  * Response.
  */
-public class SdkTestData{
+public class SdkTestData {
 
     /**
      * code.

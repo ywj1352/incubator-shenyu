@@ -44,7 +44,7 @@ services:
       retries: 30
       start_period: 5s
 
-  shenyu-examples-sdk:
+  shenyu-examples-sdk-http:
     deploy:
       resources:
         limits:
@@ -56,22 +56,21 @@ services:
       - shenyu.register.serverLists=http://shenyu-admin:9095
       - com.alipay.sofa.rpc.registry-address=zookeeper://shenyu-zk:2181
     healthcheck:
-      test: [ "CMD-SHELL", "wget -q -O - http://localhost:28011/sofa/findAll | grep UP || exit 1" ]
+      test: [ "CMD", "wget", "http://shenyu-examples-sdk-http:8899/shenyu-sdk/healthCheck" ]
       timeout: 2s
       retries: 3
       start_period: 5s
     ports:
-      - "28011:28011"
-      - "8888:8888"
+      - "8899:8899"
     networks:
       - shenyu
     depends_on:
-      shenyu-integrated-test-sofa:
+      shenyu-integrated-test-sdk-http:
         condition: service_healthy
 
-  shenyu-integrated-test-sofa:
-    container_name: shenyu-integrated-test-sdk
-    image: apache/shenyu-integrated-test-sdk:latest
+  shenyu-integrated-test-sdk-http:
+    container_name: shenyu-integrated-test-sdk-http
+    image: apache/shenyu-integrated-test-sdk-http:latest
     restart: always
     deploy:
       resources:
@@ -84,8 +83,9 @@ services:
         condition: service_healthy
     ports:
       - "9195:9195"
+      - "8090:8090"
     healthcheck:
-      test: [ "CMD", "wget", "-q", "-O", "-", "http://shenyu-integrated-test-sdk:9195/actuator/health" ]
+      test: [ "CMD", "wget", "-q", "-O", "-", "http://shenyu-integrated-test-http:9195/actuator/health" ]
       timeout: 2s
       retries: 3
       start_period: 5s

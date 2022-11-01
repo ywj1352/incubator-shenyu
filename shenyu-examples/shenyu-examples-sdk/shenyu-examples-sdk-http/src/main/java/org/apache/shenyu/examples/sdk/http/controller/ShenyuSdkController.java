@@ -21,6 +21,7 @@ import org.apache.shenyu.common.dto.PluginData;
 import org.apache.shenyu.examples.sdk.http.api.ShenyuSdkApi;
 import org.apache.shenyu.examples.sdk.http.dto.SelectorRulesData;
 import org.apache.shenyu.examples.sdk.http.dto.ShenyuServerResponse;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,13 +39,13 @@ public class ShenyuSdkController {
     private ShenyuSdkApi sdkApi;
 
     /**
-     *  call shenyu selectorRule.
+     * call shenyu selectorRule.
      *
      * @param selectorRulesRequest selectorRulesRequest
      * @return response
      */
     @PostMapping("/selectorRule")
-    public ShenyuServerResponse callShenyuSelectorRule(SelectorRulesData selectorRulesRequest) {
+    public ShenyuServerResponse callShenyuSelectorRule(final SelectorRulesData selectorRulesRequest) {
         return sdkApi.selectorAndRules(selectorRulesRequest);
     }
 
@@ -55,8 +56,18 @@ public class ShenyuSdkController {
      * @return response
      */
     @PostMapping("/saveOrUpdate")
-    public ShenyuServerResponse callShenyuSaveOrUpdate(PluginData pluginData) {
+    public ShenyuServerResponse callShenyuSaveOrUpdate(final PluginData pluginData) {
         return sdkApi.saveOrUpdate(pluginData);
+    }
+
+    /**
+     * healthCheck.
+     *
+     * @return up
+     */
+    @GetMapping("/healthCheck")
+    public String healthCheck() {
+        return "UP";
     }
 
 }

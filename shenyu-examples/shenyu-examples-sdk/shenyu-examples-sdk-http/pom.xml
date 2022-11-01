@@ -60,7 +60,7 @@
     </dependencies>
 
     <build>
-        <finalName>shenyu-examples-sofa</finalName>
+        <finalName>shenyu-examples-sdk-http</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

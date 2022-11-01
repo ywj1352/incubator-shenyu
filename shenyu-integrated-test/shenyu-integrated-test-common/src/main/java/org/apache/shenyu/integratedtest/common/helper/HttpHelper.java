@@ -186,6 +186,29 @@ public class HttpHelper {
     }
 
     /**
+     * Send a post http request.
+     *
+     * @param url     url
+     * @param headers headers
+     * @param req     request
+     * @param type    type of response passed to {@link Gson#fromJson(String, Type)}
+     * @param <S>     response type
+     * @param <R>     request type
+     * @return response
+     * @throws IOException IO exception
+     */
+    public <S, R> S postHttpService(final String url, final Map<String, Object> headers, final R req, final Type type) throws IOException {
+        Response response = postHttpService(url, headers, req);
+        String respBody = Objects.requireNonNull(response.body()).string();
+        LOG.info("getHttpService({}) resp({})", url, respBody);
+        try {
+            return GSON.fromJson(respBody, type);
+        } catch (Exception e) {
+            return (S) respBody;
+        }
+    }
+
+    /**
      * Send a put http request to shenyu gateway.
      *
      * @param <S>      type of response object
@@ -292,14 +315,4 @@ public class HttpHelper {
         }
     }
 
-    public <S, R> S postHttpService(final String url, final Map<String, Object> headers, R req, final Type type) throws IOException {
-        Response response = postHttpService(url, headers, req);
-        String respBody = Objects.requireNonNull(response.body()).string();
-        LOG.info("getHttpService({}) resp({})", url, respBody);
-        try {
-            return GSON.fromJson(respBody, type);
-        } catch (Exception e) {
-            return (S) respBody;
-        }
-    }
 }

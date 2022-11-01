@@ -40,6 +40,12 @@ public interface ShenyuSdkApi {
     ShenyuServerResponse selectorAndRules(@RequestBody SelectorRulesData selectorRulesData);
 
 
+    /**
+     * call shenyu plugin saveOrUpdate.
+     *
+     * @param pluginData pluginData
+     * @return response
+     */
     @PostMapping("/shenyu/plugin/saveOrUpdate")
     ShenyuServerResponse saveOrUpdate(@RequestBody PluginData pluginData);
 
