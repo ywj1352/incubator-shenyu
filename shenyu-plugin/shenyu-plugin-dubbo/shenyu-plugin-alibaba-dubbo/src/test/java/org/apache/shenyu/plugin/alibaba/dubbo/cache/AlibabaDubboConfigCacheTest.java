@@ -118,9 +118,9 @@ public final class AlibabaDubboConfigCacheTest {
         MetaData metaData = new MetaData();
         metaData.setRpcExt(GsonUtils.getInstance().toJson(dubboParam));
         AlibabaDubboConfigCache alibabaDubboConfigCacheMock = mock(AlibabaDubboConfigCache.class);
-        when(alibabaDubboConfigCacheMock.build(metaData))
+        when(alibabaDubboConfigCacheMock.build(metaData, ""))
                 .thenReturn(new ReferenceConfig<>());
-        assertNotNull(alibabaDubboConfigCacheMock.build(metaData));
+        assertNotNull(alibabaDubboConfigCacheMock.build(metaData, ""));
     }
 
     @Test

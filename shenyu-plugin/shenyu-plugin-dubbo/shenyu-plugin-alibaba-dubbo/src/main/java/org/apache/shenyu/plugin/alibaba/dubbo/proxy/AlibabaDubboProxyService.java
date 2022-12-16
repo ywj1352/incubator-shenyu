@@ -23,9 +23,11 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import com.alibaba.dubbo.rpc.service.GenericException;
 import com.alibaba.dubbo.rpc.service.GenericService;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.shenyu.common.constant.Constants;
 import org.apache.shenyu.common.dto.MetaData;
 import org.apache.shenyu.common.exception.ShenyuException;
 import org.apache.shenyu.common.utils.ParamCheckUtils;
@@ -33,8 +35,7 @@ import org.apache.shenyu.plugin.alibaba.dubbo.cache.AlibabaDubboConfigCache;
 import org.apache.shenyu.plugin.dubbo.common.param.DubboParamResolveService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
+import org.springframework.web.server.ServerWebExchange;
 
 /**
  * Alibaba dubbo proxy service is  use GenericService.
@@ -59,14 +60,21 @@ public class AlibabaDubboProxyService {
      *
      * @param body     the body
      * @param metaData the meta data
+     * @param exchange exchange
      * @return the object
      * @throws ShenyuException the shenyu exception
      */
-    public ResponseFuture genericInvoker(final String body, final MetaData metaData) throws ShenyuException {
-        ReferenceConfig<GenericService> reference = AlibabaDubboConfigCache.getInstance().get(metaData.getPath());
-        if (Objects.isNull(reference) || StringUtils.isEmpty(reference.getInterface())) {
+    public ResponseFuture genericInvoker(final String body, final MetaData metaData, final ServerWebExchange exchange) throws ShenyuException {
+        String referenceKey = metaData.getPath();
+        String namespace = "";
+        if (CollectionUtils.isNotEmpty(exchange.getRequest().getHeaders().get(Constants.NAMESPACE))) {
+            namespace = exchange.getRequest().getHeaders().get(Constants.NAMESPACE).get(0);
+            referenceKey = namespace + ":" + referenceKey;
+        }
+        ReferenceConfig<GenericService> reference = AlibabaDubboConfigCache.getInstance().get(referenceKey);
+        if (StringUtils.isEmpty(reference.getInterface())) {
             AlibabaDubboConfigCache.getInstance().invalidate(metaData.getPath());
-            reference = AlibabaDubboConfigCache.getInstance().initRef(metaData);
+            reference = AlibabaDubboConfigCache.getInstance().initRefN(metaData, namespace);
         }
         try {
             GenericService genericService = reference.get();

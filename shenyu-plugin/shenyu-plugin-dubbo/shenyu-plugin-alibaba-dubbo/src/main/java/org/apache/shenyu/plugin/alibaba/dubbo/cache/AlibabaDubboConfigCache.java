@@ -137,19 +137,57 @@ public final class AlibabaDubboConfigCache extends DubboConfigCache {
         } catch (ExecutionException e) {
             LOG.error("init dubbo ref exception", e);
         }
-        return build(metaData);
+        return build(metaData, "");
     }
-    
+
+    /**
+     * Init ref reference config.
+     *
+     * @param metaData  the meta data
+     * @param namespace namespace
+     * @return the reference config
+     */
+    public ReferenceConfig<GenericService> initRefN(final MetaData metaData, final String namespace) {
+        if (StringUtils.isBlank(namespace)) {
+            return initRef(metaData);
+        }
+        try {
+            ReferenceConfig<GenericService> referenceConfig = cache.get(metaData.getPath());
+            if (StringUtils.isNoneBlank(referenceConfig.getInterface())) {
+                return referenceConfig;
+            }
+        } catch (ExecutionException e) {
+            LOG.error("initRefN dubbo ref exception", e);
+        }
+        return build(metaData, namespace);
+    }
+
+
     /**
      * Build reference config.
      *
      * @param metaData the meta data
+     * @param namespace the namespace
      * @return the reference config
      */
-    public ReferenceConfig<GenericService> build(final MetaData metaData) {
+    public ReferenceConfig<GenericService> build(final MetaData metaData, final String namespace) {
         if (Objects.isNull(applicationConfig) || Objects.isNull(registryConfig)) {
             return new ReferenceConfig<>();
         }
+        ReferenceConfig<GenericService> reference = buildReferenceConfig(metaData, namespace);
+        try {
+            Object obj = reference.get();
+            if (Objects.nonNull(obj)) {
+                LOG.info("init alibaba dubbo reference success there meteData is :{}", metaData);
+                cache.put(namespace + ":" + metaData.getPath(), reference);
+            }
+        } catch (Exception e) {
+            LOG.error("init alibaba dubbo refernce exception", e);
+        }
+        return reference;
+    }
+
+    private ReferenceConfig<GenericService> buildReferenceConfig(final MetaData metaData, final String namespace) {
         ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
         reference.setGeneric(true);
         reference.setApplication(applicationConfig);
@@ -184,14 +222,16 @@ public final class AlibabaDubboConfigCache extends DubboConfigCache {
             Optional.ofNullable(dubboParam.getRetries()).ifPresent(reference::setRetries);
             Optional.ofNullable(dubboParam.getSent()).ifPresent(reference::setSent);
         }
-        try {
-            Object obj = reference.get();
-            if (Objects.nonNull(obj)) {
-                LOG.info("init alibaba dubbo reference success there meteData is :{}", metaData);
-                cache.put(metaData.getPath(), reference);
+        if (StringUtils.isNotBlank(namespace)) {
+            String address = registryConfig.getAddress();
+            if (!address.contains(Constants.NAMESPACE)) {
+                reference.setRegistry(new RegistryConfig(address + "?" + Constants.NAMESPACE + "=" + namespace));
+            } else {
+                String newAddress = address.substring(0, address.indexOf(Constants.NAMESPACE) + 1) + Constants.NAMESPACE + "=" + namespace;
+                reference.setRegistry(new RegistryConfig(newAddress));
             }
-        } catch (Exception e) {
-            LOG.error("init alibaba dubbo refernce exception", e);
+        } else {
+            reference.setRegistry(registryConfig);
         }
         return reference;
     }

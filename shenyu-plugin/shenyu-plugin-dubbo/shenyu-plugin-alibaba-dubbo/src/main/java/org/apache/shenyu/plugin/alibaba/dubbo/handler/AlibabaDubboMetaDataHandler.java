@@ -40,7 +40,7 @@ public class AlibabaDubboMetaDataHandler extends AbstractDubboMetaDataHandler {
 
     @Override
     protected void updateReference(final MetaData metaData) {
-        AlibabaDubboConfigCache.getInstance().build(metaData);
+        AlibabaDubboConfigCache.getInstance().build(metaData, "");
     }
 
     @Override

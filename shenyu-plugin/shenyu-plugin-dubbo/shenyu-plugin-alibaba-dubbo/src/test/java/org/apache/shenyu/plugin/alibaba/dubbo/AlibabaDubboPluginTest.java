@@ -68,8 +68,11 @@ public final class AlibabaDubboPluginTest {
 
     private MetaData metaData;
 
+    private MockServerWebExchange exchange;
+
     @BeforeEach
     public void setUp() {
+        exchange = MockServerWebExchange.from(MockServerHttpRequest.get("localhost").build());
         metaData = new MetaData();
         metaData.setId("1332017966661636096");
         metaData.setAppName("dubbo");
@@ -77,7 +80,7 @@ public final class AlibabaDubboPluginTest {
         metaData.setServiceName("org.apache.shenyu.test.dubbo.api.service.DubboTestService");
         metaData.setMethodName("findAll");
         metaData.setRpcType(RpcTypeEnum.DUBBO.getName());
-        when(mockAlibabaDubboProxyService.genericInvoker(null, metaData))
+        when(mockAlibabaDubboProxyService.genericInvoker(null, metaData, exchange))
                 .thenReturn(new SimpleFuture(new RpcResult(metaData.getId())));
         alibabaDubboPluginUnderTest = new AlibabaDubboPlugin(mockAlibabaDubboProxyService);
     }

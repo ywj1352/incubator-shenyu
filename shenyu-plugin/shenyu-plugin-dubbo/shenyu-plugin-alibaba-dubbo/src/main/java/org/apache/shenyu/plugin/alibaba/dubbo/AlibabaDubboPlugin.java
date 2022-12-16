@@ -77,7 +77,7 @@ public class AlibabaDubboPlugin extends AbstractDubboPlugin {
         RpcContext.getContext().setAttachment(Constants.DUBBO_RULE_ID, rule.getId());
         RpcContext.getContext().setAttachment(Constants.DUBBO_REMOTE_ADDRESS, Objects.requireNonNull(exchange.getRequest().getRemoteAddress()).getAddress().getHostAddress());
         return Mono.create(monoSink -> {
-            ResponseFuture future = alibabaDubboProxyService.genericInvoker(param, metaData);
+            ResponseFuture future = alibabaDubboProxyService.genericInvoker(param, metaData, exchange);
             future.setCallback(new ResponseCallback() {
 
                 @Override

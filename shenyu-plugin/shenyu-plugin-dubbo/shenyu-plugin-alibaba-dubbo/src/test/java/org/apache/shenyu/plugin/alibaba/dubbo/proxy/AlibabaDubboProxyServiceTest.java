@@ -39,6 +39,9 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.server.ServerWebExchange;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -62,11 +65,14 @@ public final class AlibabaDubboProxyServiceTest {
 
     private MetaData metaData;
 
+    private ServerWebExchange exchange;
+
     @Mock
     private ReferenceConfig<GenericService> referenceConfig;
 
     @BeforeEach
     public void setup() {
+        exchange = MockServerWebExchange.from(MockServerHttpRequest.get("localhost").build());
         metaData = new MetaData();
         metaData.setId("1332017966661636096");
         metaData.setAppName("sofa");
@@ -98,7 +104,7 @@ public final class AlibabaDubboProxyServiceTest {
 
             AlibabaDubboProxyService alibabaDubboProxyService = new AlibabaDubboProxyService(new BodyParamResolveServiceImpl());
 
-            ResponseFuture responseFuture = alibabaDubboProxyService.genericInvoker("", metaData);
+            ResponseFuture responseFuture = alibabaDubboProxyService.genericInvoker("", metaData, exchange);
             assertNotNull(responseFuture);
             assertEquals(sample, RpcContext.getContext().getFuture().get());
         }
