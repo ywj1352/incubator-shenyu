@@ -31,6 +31,7 @@ import org.apache.shenyu.common.dto.AppAuthData;
 import org.apache.shenyu.common.dto.MetaData;
 import org.apache.shenyu.common.dto.SelectorData;
 import org.apache.shenyu.common.dto.ProxySelectorData;
+import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 import org.apache.shenyu.common.exception.ShenyuException;
 import org.apache.shenyu.common.utils.GsonUtils;
 import org.apache.shenyu.sync.data.api.AuthDataSubscriber;
@@ -45,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Collections;
 
 /**
  * this cache data with zookeeper.
@@ -162,19 +164,9 @@ public class ZookeeperSyncDataService implements SyncDataService {
                 .ifPresent(data -> metaDataSubscribers.forEach(e -> e.onSubscribe(metaData)));
     }
 
-    private void cacheProxySelectorData(final ProxySelectorData proxySelectorData) {
-        Optional.ofNullable(proxySelectorData)
-                .ifPresent(data -> proxySelectorDataSubscribers.forEach(e -> e.onSubscribe(proxySelectorData, proxySelectorData.getDiscoveryUpstreamList())));
-    }
-
     private void unCacheMetaData(final MetaData metaData) {
         Optional.ofNullable(metaData)
                 .ifPresent(data -> metaDataSubscribers.forEach(e -> e.unSubscribe(metaData)));
-    }
-
-    private void unCacheProxySelectorData(final ProxySelectorData proxySelectorData) {
-        Optional.ofNullable(proxySelectorData)
-                .ifPresent(data -> proxySelectorDataSubscribers.forEach(e -> e.unSubscribe(proxySelectorData)));
     }
 
     @Override
@@ -334,25 +326,36 @@ public class ZookeeperSyncDataService implements SyncDataService {
                 return;
             }
             String[] pathInfoArray = path.split("/");
-            if (pathInfoArray.length != 5) {
+            if (pathInfoArray.length < 5) {
                 return;
             }
-            String pluginName = pathInfoArray[pathInfoArray.length - 2];
-            String proxySelectorName = pathInfoArray[pathInfoArray.length - 1];
-            if (type.equals(TreeCacheEvent.Type.NODE_REMOVED)) {
-                ProxySelectorData proxySelectorData = new ProxySelectorData();
-                proxySelectorData.setPluginName(pluginName);
-                proxySelectorData.setName(proxySelectorName);
-                unCacheProxySelectorData(proxySelectorData);
-                return;
-            }
-            ProxySelectorData proxySelectorData = GsonUtils.getInstance().fromJson(new String(data.getData(), StandardCharsets.UTF_8), ProxySelectorData.class);
-            proxySelectorData.setName(proxySelectorName);
+            String pluginName = pathInfoArray[3];
+            String proxySelectorName = pathInfoArray[4];
+            ProxySelectorData proxySelectorData = new ProxySelectorData();
             proxySelectorData.setPluginName(pluginName);
-            // create or update
-            Optional.ofNullable(data)
-                    .ifPresent(e -> cacheProxySelectorData(proxySelectorData));
-
+            proxySelectorData.setName(proxySelectorName);
+            String json = new String(data.getData(), StandardCharsets.UTF_8);
+            switch (type) {
+                case NODE_ADDED:
+                    if (pathInfoArray.length == 5) {
+                        proxySelectorDataSubscribers.forEach(e -> e.onSubscribeProxySelector(proxySelectorData));
+                    } else if (pathInfoArray.length == 6) {
+                        DiscoveryUpstreamData addDiscoveryUpstream = GsonUtils.getInstance().fromJson(json, DiscoveryUpstreamData.class);
+                        proxySelectorDataSubscribers.forEach(e -> e.onSubscribeDiscoveryUpstreamData(proxySelectorData, Collections.singletonList(addDiscoveryUpstream)));
+                    }
+                    break;
+                case NODE_REMOVED:
+                    if (pathInfoArray.length == 5) {
+                        proxySelectorDataSubscribers.forEach(e -> e.unSubscribeProxySelector(proxySelectorData));
+                    } else if (pathInfoArray.length == 6) {
+                        DiscoveryUpstreamData discoveryUpstreamData = GsonUtils.getInstance().fromJson(json, DiscoveryUpstreamData.class);
+                        proxySelectorDataSubscribers.forEach(e -> e.unSubscribeDiscoveryUpstreamData(proxySelectorData, Collections.singletonList(discoveryUpstreamData)));
+                    }
+                    break;
+                default:
+                    //ignore
+                    break;
+            }
         }
     }
 }

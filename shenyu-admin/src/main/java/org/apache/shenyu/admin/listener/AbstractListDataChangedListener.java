@@ -24,7 +24,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.shenyu.common.dto.AppAuthData;
 import org.apache.shenyu.common.dto.MetaData;
 import org.apache.shenyu.common.dto.PluginData;
-import org.apache.shenyu.common.dto.ProxySelectorData;
+import org.apache.shenyu.common.dto.DiscoverySyncData;
 import org.apache.shenyu.common.dto.RuleData;
 import org.apache.shenyu.common.dto.SelectorData;
 import org.apache.shenyu.common.enums.DataEventTypeEnum;
@@ -59,7 +59,7 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
 
     private static final ConcurrentMap<String, MetaData> META_DATA = Maps.newConcurrentMap();
 
-    private static final ConcurrentMap<String, List<ProxySelectorData>> PROXY_SELECTOR_MAP = Maps.newConcurrentMap();
+    private static final ConcurrentMap<String, List<DiscoverySyncData>> DISCOVERY_SYNC_DATA_MAP = Maps.newConcurrentMap();
 
     private static final Comparator<SelectorData> SELECTOR_DATA_COMPARATOR = Comparator.comparing(SelectorData::getSort);
 
@@ -249,46 +249,46 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
     }
 
     @Override
-    public void onProxySelectorChanged(final List<ProxySelectorData> changed, final DataEventTypeEnum eventType) {
-        updateProxySelectorMap(getConfig(changeData.getProxySelectorDataId()));
+    public void onDiscoverySyncDataChanged(final List<DiscoverySyncData> changed, final DataEventTypeEnum eventType) {
+        updateDiscoverySyncDataMap(getConfig(changeData.getProxySelectorDataId()));
         switch (eventType) {
             case DELETE:
-                changed.forEach(proxySelectorData -> {
-                    List<ProxySelectorData> ls = PROXY_SELECTOR_MAP
-                            .getOrDefault(proxySelectorData.getId(), new ArrayList<>())
+                changed.forEach(discoverySyncData -> {
+                    List<DiscoverySyncData> ls = DISCOVERY_SYNC_DATA_MAP
+                            .getOrDefault(discoverySyncData.getProxySelectorData().getId(), new ArrayList<>())
                             .stream()
-                            .filter(s -> !s.getId().equals(proxySelectorData.getId()))
+                            .filter(s -> !s.getProxySelectorData().getId().equals(discoverySyncData.getProxySelectorData().getId()))
                             .collect(Collectors.toList());
-                    PROXY_SELECTOR_MAP.put(proxySelectorData.getId(), ls);
+                    DISCOVERY_SYNC_DATA_MAP.put(discoverySyncData.getProxySelectorData().getId(), ls);
                 });
                 break;
             case REFRESH:
             case MYSELF:
                 Set<String> selectIdSet = changed
                         .stream()
-                        .map(ProxySelectorData::getId)
+                        .map(p -> p.getProxySelectorData().getId())
                         .collect(Collectors.toSet());
-                PROXY_SELECTOR_MAP.keySet().removeAll(selectIdSet);
-                changed.forEach(proxySelectorData -> {
-                    List<ProxySelectorData> ls = new ArrayList<>(PROXY_SELECTOR_MAP.getOrDefault(proxySelectorData.getId(),
+                DISCOVERY_SYNC_DATA_MAP.keySet().removeAll(selectIdSet);
+                changed.forEach(discoverySyncData -> {
+                    List<DiscoverySyncData> ls = new ArrayList<>(DISCOVERY_SYNC_DATA_MAP.getOrDefault(discoverySyncData.getProxySelectorData().getId(),
                             new ArrayList<>()));
-                    ls.add(proxySelectorData);
-                    PROXY_SELECTOR_MAP.put(proxySelectorData.getId(), ls);
+                    ls.add(discoverySyncData);
+                    DISCOVERY_SYNC_DATA_MAP.put(discoverySyncData.getProxySelectorData().getId(), ls);
                 });
                 break;
             default:
-                changed.forEach(proxySelectorData -> {
-                    List<ProxySelectorData> ls = PROXY_SELECTOR_MAP
-                            .getOrDefault(proxySelectorData.getId(), new ArrayList<>())
+                changed.forEach(discoverySyncData -> {
+                    List<DiscoverySyncData> ls = DISCOVERY_SYNC_DATA_MAP
+                            .getOrDefault(discoverySyncData.getProxySelectorData().getId(), new ArrayList<>())
                             .stream()
-                            .filter(s -> !s.getId().equals(proxySelectorData.getId()))
+                            .filter(s -> !s.getProxySelectorData().getId().equals(discoverySyncData.getProxySelectorData().getId()))
                             .collect(Collectors.toList());
-                    ls.add(proxySelectorData);
-                    PROXY_SELECTOR_MAP.put(proxySelectorData.getId(), ls);
+                    ls.add(discoverySyncData);
+                    DISCOVERY_SYNC_DATA_MAP.put(discoverySyncData.getProxySelectorData().getId(), ls);
                 });
                 break;
         }
-        publishConfig(changeData.getProxySelectorDataId(), PROXY_SELECTOR_MAP);
+        publishConfig(changeData.getProxySelectorDataId(), DISCOVERY_SYNC_DATA_MAP);
         LOG.debug("[DataChangedListener] ProxySelectorChanged {}", changeData.getProxySelectorDataId());
     }
 
@@ -346,23 +346,24 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
         RULE_MAP.keySet().removeAll(set);
     }
 
-    private void updateProxySelectorMap(final String configInfo) {
+
+    private void updateDiscoverySyncDataMap(final String configInfo) {
         JsonObject jo = GsonUtils.getInstance().fromJson(configInfo, JsonObject.class);
-        Set<String> set = new HashSet<>(PROXY_SELECTOR_MAP.keySet());
+        Set<String> set = new HashSet<>(DISCOVERY_SYNC_DATA_MAP.keySet());
         for (Map.Entry<String, JsonElement> e : jo.entrySet()) {
             set.remove(e.getKey());
-            List<ProxySelectorData> ls = new ArrayList<>();
-            e.getValue().getAsJsonArray().forEach(je -> ls.add(GsonUtils.getInstance().fromJson(je, ProxySelectorData.class)));
-            PROXY_SELECTOR_MAP.put(e.getKey(), ls);
+            List<DiscoverySyncData> ls = new ArrayList<>();
+            e.getValue().getAsJsonArray().forEach(je -> ls.add(GsonUtils.getInstance().fromJson(je, DiscoverySyncData.class)));
+            DISCOVERY_SYNC_DATA_MAP.put(e.getKey(), ls);
         }
-        PROXY_SELECTOR_MAP.keySet().removeAll(set);
+        DISCOVERY_SYNC_DATA_MAP.keySet().removeAll(set);
     }
 
     /**
      * publishConfig.
      *
      * @param dataId dataId
-     * @param data data
+     * @param data   data
      */
     public abstract void publishConfig(String dataId, Object data);
 
@@ -409,11 +410,11 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
         /**
          * ChangeData.
          *
-         * @param pluginDataId pluginDataId
+         * @param pluginDataId   pluginDataId
          * @param selectorDataId selectorDataId
-         * @param ruleDataId ruleDataId
-         * @param authDataId authDataId
-         * @param metaDataId metaDataId
+         * @param ruleDataId     ruleDataId
+         * @param authDataId     authDataId
+         * @param metaDataId     metaDataId
          */
         public ChangeData(final String pluginDataId, final String selectorDataId,
                           final String ruleDataId, final String authDataId,
@@ -473,6 +474,7 @@ public abstract class AbstractListDataChangedListener implements DataChangedList
 
         /**
          * get proxySelectorDataId.
+         *
          * @return proxySelectorDataId
          */
         public String getProxySelectorDataId() {

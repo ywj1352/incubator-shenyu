@@ -17,12 +17,7 @@
 
 package org.apache.shenyu.admin.listener;
 
-import org.apache.shenyu.common.dto.AppAuthData;
-import org.apache.shenyu.common.dto.MetaData;
-import org.apache.shenyu.common.dto.PluginData;
-import org.apache.shenyu.common.dto.ProxySelectorData;
-import org.apache.shenyu.common.dto.RuleData;
-import org.apache.shenyu.common.dto.SelectorData;
+import org.apache.shenyu.common.dto.*;
 import org.apache.shenyu.common.enums.DataEventTypeEnum;
 
 import java.util.List;
@@ -85,7 +80,7 @@ public interface DataChangedListener {
      * @param changed   the changed
      * @param eventType the event type
      */
-    default void onProxySelectorChanged(List<ProxySelectorData> changed, DataEventTypeEnum eventType) {
+    default void onDiscoverySyncDataChanged(List<DiscoverySyncData> changed, DataEventTypeEnum eventType) {
     }
 
 }

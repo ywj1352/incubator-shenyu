@@ -17,8 +17,8 @@
 
 package org.apache.shenyu.plugin.base.cache;
 
+import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 import org.apache.shenyu.common.dto.ProxySelectorData;
-import org.apache.shenyu.common.dto.convert.selector.DiscoveryUpstream;
 import org.apache.shenyu.plugin.base.handler.ProxySelectorDataHandler;
 import org.apache.shenyu.sync.data.api.ProxySelectorDataSubscriber;
 
@@ -38,16 +38,29 @@ public class CommonProxySelectorDataSubscriber implements ProxySelectorDataSubsc
         this.handlerMap = proxySelectorDataHandlerList.stream().collect(Collectors.toConcurrentMap(ProxySelectorDataHandler::pluginName, e -> e));
     }
 
+
     @Override
-    public void onSubscribe(final ProxySelectorData proxySelectorData, final List<DiscoveryUpstream> upstreamsList) {
+    public void onSubscribeProxySelector(final ProxySelectorData proxySelectorData) {
         Optional.ofNullable(handlerMap.get(proxySelectorData.getPluginName()))
-                .ifPresent(handler -> handler.handlerProxySelector(proxySelectorData, upstreamsList));
+                .ifPresent(handler -> handler.createProxySelector(proxySelectorData));
     }
 
     @Override
-    public void unSubscribe(final ProxySelectorData proxySelectorData) {
+    public void unSubscribeProxySelector(final ProxySelectorData proxySelectorData) {
         Optional.ofNullable(handlerMap.get(proxySelectorData.getPluginName()))
                 .ifPresent(handler -> handler.removeProxySelector(proxySelectorData.getName()));
+    }
+
+    @Override
+    public void onSubscribeDiscoveryUpstreamData(final ProxySelectorData proxySelectorData, final List<DiscoveryUpstreamData> upstreamDataList) {
+        Optional.ofNullable(handlerMap.get(proxySelectorData.getPluginName()))
+                .ifPresent(handler -> handler.addUpstreamDataList(proxySelectorData.getName(), upstreamDataList));
+    }
+
+    @Override
+    public void unSubscribeDiscoveryUpstreamData(final ProxySelectorData proxySelectorData, final List<DiscoveryUpstreamData> upstreamDataList) {
+        Optional.ofNullable(handlerMap.get(proxySelectorData.getPluginName()))
+                .ifPresent(handler -> handler.removeUpstreamDataList(proxySelectorData.getName(), upstreamDataList));
     }
 
     @Override
