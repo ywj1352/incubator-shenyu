@@ -18,49 +18,24 @@
 package org.apache.shenyu.integrated.test.admin;
 
 import org.apache.shenyu.common.dto.ConditionData;
-import org.apache.shenyu.common.dto.PluginData;
 import org.apache.shenyu.common.dto.SelectorData;
 import org.apache.shenyu.integratedtest.common.AbstractPluginDataInit;
 import org.apache.shenyu.integratedtest.common.helper.HttpHelper;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AdminPluginUploadTest extends AbstractPluginDataInit {
 
-    // jar build in dockerfile
-    public static final String JAR_PATH = "/opt/shenyu-integrated-test-upload-plugin-case/shenyu-custom-plugin.jar";
-
-    private String jarTxt;
-
-    @BeforeAll
-    public void setup() throws IOException {
-        Path path = Paths.get(JAR_PATH);
-        byte[] jarData = Files.readAllBytes(path);
-        jarTxt = Base64.getEncoder().encodeToString(jarData);
-    }
-
     @Test
     public void testUploadPlugin() throws IOException {
-        PluginData pluginData = new PluginData();
-        pluginData.setEnabled(true);
-        pluginData.setName("CustomPlugin");
-        pluginData.setRole("Test");
-        pluginData.setId("1");
-        pluginData.setPluginJar(jarTxt);
-        HttpHelper.INSTANCE.postGateway("/shenyu/plugin/saveOrUpdate", pluginData, String.class);
         SelectorData selectorData = new SelectorData();
         selectorData.setPluginId("1");
         selectorData.setId("2");
-        selectorData.setPluginId(pluginData.getId());
+        selectorData.setPluginId("1");
         selectorData.setName("/all");
         selectorData.setPluginName("CustomPlugin");
         selectorData.setType(0);
