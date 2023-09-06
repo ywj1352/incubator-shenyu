@@ -17,16 +17,25 @@
 
 package org.apache.shenyu.admin.service.register;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.shenyu.admin.listener.DataChangedEvent;
+import org.apache.shenyu.admin.model.dto.DiscoveryUpstreamDTO;
 import org.apache.shenyu.admin.model.entity.MetaDataDO;
 import org.apache.shenyu.admin.model.entity.SelectorDO;
 import org.apache.shenyu.admin.service.MetaDataService;
+import org.apache.shenyu.admin.transfer.DiscoveryTransfer;
 import org.apache.shenyu.admin.utils.CommonUpstreamUtils;
+import org.apache.shenyu.common.dto.DiscoverySyncData;
+import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 import org.apache.shenyu.common.dto.convert.rule.impl.WebSocketRuleHandle;
 import org.apache.shenyu.common.dto.convert.selector.WebSocketUpstream;
+import org.apache.shenyu.common.enums.ConfigGroupEnum;
+import org.apache.shenyu.common.enums.DataEventTypeEnum;
 import org.apache.shenyu.common.enums.RpcTypeEnum;
 import org.apache.shenyu.common.utils.GsonUtils;
 import org.apache.shenyu.register.common.dto.MetaDataRegisterDTO;
@@ -84,9 +93,34 @@ public class ShenyuClientRegisterWebSocketServiceImpl extends AbstractContextPat
         return handleAdd;
     }
 
+    @Override
+    protected List<DiscoveryUpstreamDTO> doDiscoveryRegisterUpstream(final String handler, final String selectorId, final String selectorName, final String pluginName) {
+        List<WebSocketUpstream> webSocketUpstreams = GsonUtils.getInstance().fromList(handler, WebSocketUpstream.class);
+        if(CollectionUtils.isEmpty(webSocketUpstreams)) return Collections.emptyList();
+        DiscoverySyncData discoverySyncData = covert(webSocketUpstreams);
+        discoverySyncData.setPluginName(pluginName);
+        discoverySyncData.setSelectorId(selectorId);
+        discoverySyncData.setSelectorName(selectorName);
+        getEventPublisher().publishEvent(new DataChangedEvent(ConfigGroupEnum.DISCOVER_UPSTREAM, DataEventTypeEnum.UPDATE, Collections.singletonList(discoverySyncData)));
+        return covert2List(discoverySyncData.getUpstreamDataList());
+    }
+
+
+    private List<DiscoveryUpstreamDTO> covert2List(List<DiscoveryUpstreamData> discoveryUpstreamDataList) {
+        return discoveryUpstreamDataList.stream().map(DiscoveryTransfer.INSTANCE::mapToDTO).collect(Collectors.toList());
+    }
+
+
+    private DiscoverySyncData covert(final List<WebSocketUpstream> webSocketUpstreams) {
+        DiscoverySyncData discoverySyncData = new DiscoverySyncData();
+        List<DiscoveryUpstreamData> collect = webSocketUpstreams.stream().map(DiscoveryTransfer.INSTANCE::mapToData).collect(Collectors.toList());
+        discoverySyncData.setUpstreamDataList(collect);
+        return discoverySyncData;
+    }
+
     private List<WebSocketUpstream> buildWebSocketUpstreamList(final List<URIRegisterDTO> uriList) {
         return uriList.stream()
-            .map(dto -> CommonUpstreamUtils.buildWebSocketUpstream(dto.getProtocol(), dto.getHost(), dto.getPort()))
-            .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
+                .map(dto -> CommonUpstreamUtils.buildWebSocketUpstream(dto.getProtocol(), dto.getHost(), dto.getPort()))
+                .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
 }

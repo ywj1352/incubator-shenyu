@@ -20,6 +20,7 @@ package org.apache.shenyu.admin.discovery;
 import org.apache.shenyu.admin.model.dto.DiscoveryHandlerDTO;
 import org.apache.shenyu.admin.model.dto.DiscoveryUpstreamDTO;
 import org.apache.shenyu.admin.model.dto.ProxySelectorDTO;
+import org.apache.shenyu.admin.model.dto.SelectorDTO;
 import org.apache.shenyu.admin.model.entity.DiscoveryDO;
 
 import java.util.List;
@@ -43,6 +44,20 @@ public interface DiscoveryProcessor {
      * @param proxySelectorDTO    proxySelectorDTO
      */
     void createProxySelector(DiscoveryHandlerDTO discoveryHandlerDTO, ProxySelectorDTO proxySelectorDTO);
+
+
+    /**
+     * createSelectorWatcher.
+     * <p>
+     * add watcher on discovery service when use discovery.
+     * only support on [{@link org.apache.shenyu.common.enums.PluginEnum#DIVIDE},{@link org.apache.shenyu.common.enums.PluginEnum#WEB_SOCKET}]
+     * </p>
+     *
+     * @param discoveryHandlerDTO discoveryHandlerDTO
+     * @param selectorDTO         selectorDTO
+     * @param pluginName          pluginName
+     */
+    void createSelectorWatcher(DiscoveryHandlerDTO discoveryHandlerDTO, SelectorDTO selectorDTO, String pluginName);
 
     /**
      * removeDiscovery.
@@ -75,4 +90,6 @@ public interface DiscoveryProcessor {
      */
     void fetchAll(String discoveryHandlerId);
 
+
+     DiscoveryMode mode();
 }

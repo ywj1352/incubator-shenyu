@@ -23,6 +23,7 @@ import org.apache.shenyu.admin.mapper.ProxySelectorMapper;
 import org.apache.shenyu.admin.model.dto.DiscoveryHandlerDTO;
 import org.apache.shenyu.admin.model.dto.DiscoveryUpstreamDTO;
 import org.apache.shenyu.admin.model.dto.ProxySelectorDTO;
+import org.apache.shenyu.admin.model.dto.SelectorDTO;
 import org.apache.shenyu.admin.model.entity.DiscoveryDO;
 import org.apache.shenyu.admin.model.entity.DiscoveryUpstreamDO;
 import org.apache.shenyu.admin.model.entity.ProxySelectorDO;
@@ -71,6 +72,11 @@ public class LocalDiscoveryProcessor implements DiscoveryProcessor, ApplicationE
     }
 
     @Override
+    public void createSelectorWatcher(DiscoveryHandlerDTO discoveryHandlerDTO, SelectorDTO selectorDTO, String pluginName) {
+        LOG.info("shenyu discovery local mode do nothing in createSelectorWatcher");
+    }
+
+    @Override
     public void removeDiscovery(final DiscoveryDO discoveryDO) {
         LOG.info("shenyu discovery local mode do nothing in removeDiscovery");
     }
@@ -113,4 +119,8 @@ public class LocalDiscoveryProcessor implements DiscoveryProcessor, ApplicationE
         eventPublisher.publishEvent(dataChangedEvent);
     }
 
+    @Override
+    public DiscoveryMode mode() {
+        return DiscoveryMode.LOCAL;
+    }
 }

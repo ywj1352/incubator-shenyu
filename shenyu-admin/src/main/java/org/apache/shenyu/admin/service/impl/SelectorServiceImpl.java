@@ -23,6 +23,7 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shenyu.admin.aspect.annotation.DataPermission;
 import org.apache.shenyu.admin.aspect.annotation.Pageable;
+import org.apache.shenyu.admin.discovery.DiscoveryMode;
 import org.apache.shenyu.admin.listener.DataChangedEvent;
 import org.apache.shenyu.admin.mapper.PluginMapper;
 import org.apache.shenyu.admin.mapper.SelectorConditionMapper;
@@ -322,6 +323,17 @@ public class SelectorServiceImpl implements SelectorService {
     @Override
     public List<SelectorData> listAll() {
         return this.buildSelectorDataList(selectorMapper.selectAll());
+    }
+
+    @Override
+    public DiscoveryMode findSelectorDiscoveryModeBy(String selectorId) {
+        String discoveryType = selectorMapper.selectDiscoveryTypeBySelectorId(selectorId);
+        for (DiscoveryMode mode : DiscoveryMode.values()) {
+            if (mode.name().equalsIgnoreCase(discoveryType)) {
+                return mode;
+            }
+        }
+        return null;
     }
 
     /**

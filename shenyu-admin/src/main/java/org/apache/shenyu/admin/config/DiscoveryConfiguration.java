@@ -17,16 +17,18 @@
 
 package org.apache.shenyu.admin.config;
 
-import org.apache.shenyu.admin.discovery.DefaultDiscoveryProcessor;
-import org.apache.shenyu.admin.discovery.DiscoveryProcessor;
-import org.apache.shenyu.admin.discovery.DiscoveryProcessorHolder;
-import org.apache.shenyu.admin.discovery.LocalDiscoveryProcessor;
+import org.apache.shenyu.admin.discovery.*;
 import org.apache.shenyu.admin.mapper.DiscoveryHandlerMapper;
 import org.apache.shenyu.admin.mapper.DiscoveryUpstreamMapper;
 import org.apache.shenyu.admin.mapper.ProxySelectorMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * DiscoveryConfiguration.
@@ -53,7 +55,7 @@ public class DiscoveryConfiguration {
      * discoveryLocalProcessor.
      *
      * @param discoveryUpstreamMapper discoveryUpstreamMapper
-     * @param proxySelectorMapper proxySelectorMapper
+     * @param proxySelectorMapper     proxySelectorMapper
      * @return LocalDiscoveryProcessor
      */
     @Bean("LocalDiscoveryProcessor")
@@ -64,15 +66,13 @@ public class DiscoveryConfiguration {
     /**
      * discoveryProcessorHolder.
      *
-     * @param defaultDiscoveryProcessor defaultDiscoveryProcessor
-     * @param localDiscoveryProcessor   localDiscoveryProcessor
      * @return DiscoveryProcessorHolder
      */
     @Bean
-    public DiscoveryProcessorHolder discoveryProcessorHolder(@Qualifier("DefaultDiscoveryProcessor") final DiscoveryProcessor defaultDiscoveryProcessor,
-                                                             @Qualifier("LocalDiscoveryProcessor") final DiscoveryProcessor localDiscoveryProcessor
-    ) {
-        return new DiscoveryProcessorHolder(defaultDiscoveryProcessor, localDiscoveryProcessor);
+    public DiscoveryProcessorHolder discoveryProcessorHolder(List<DiscoveryProcessor> discoveryProcessors) {
+        Map<DiscoveryMode, DiscoveryProcessor> curr = discoveryProcessors.stream()
+                .collect(Collectors.toMap(DiscoveryProcessor::mode, r -> r));
+        return new DiscoveryProcessorHolder(curr);
     }
 
 }

@@ -26,6 +26,10 @@ public enum DiscoveryMode {
      */
     LOCAL,
     /**
+     * use shenyu-client to register.
+     */
+    SHENYU_CLIENT,
+    /**
      * Zookeeper discovery mode.
      */
     ZOOKEEPER,
@@ -36,5 +40,17 @@ public enum DiscoveryMode {
     /**
      * Eureka discovery mode.
      */
-    EUREKA
+    EUREKA,
+
+
+    DEFAULT;
+
+    public static DiscoveryMode find(String mode) {
+        for (DiscoveryMode m : DiscoveryMode.values()) {
+            if(m.name().equalsIgnoreCase(mode)){
+                return m;
+            }
+        }
+        throw new IllegalArgumentException();
+    }
 }

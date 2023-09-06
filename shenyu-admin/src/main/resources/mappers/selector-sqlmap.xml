@@ -193,6 +193,15 @@
         </where>
     </select>
 
+    <select id="selectDiscoveryTypeBySelectorId" resultType="java.lang.String">
+        SELECT
+        d.type
+        FROM discovery_rel dr
+        INNER JOIN discovery_handler dh ON dr.discovery_handler_id = dh.id
+        INNER JOIN discovery d ON dh.discovery_id = d.id
+        WHERE dr.selector_id = #{selectorId}
+    </select>
+
     <insert id="insert" parameterType="org.apache.shenyu.admin.model.entity.SelectorDO">
         INSERT INTO selector
                     (id,

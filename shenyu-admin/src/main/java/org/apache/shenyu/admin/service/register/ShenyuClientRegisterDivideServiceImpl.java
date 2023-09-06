@@ -27,6 +27,7 @@ import org.apache.shenyu.admin.service.SelectorService;
 import org.apache.shenyu.admin.service.converter.DivideSelectorHandleConverter;
 import org.apache.shenyu.admin.utils.CommonUpstreamUtils;
 import org.apache.shenyu.common.constant.Constants;
+import org.apache.shenyu.common.dto.DiscoverySyncData;
 import org.apache.shenyu.common.dto.SelectorData;
 import org.apache.shenyu.common.dto.convert.rule.impl.DivideRuleHandle;
 import org.apache.shenyu.common.dto.convert.selector.DivideUpstream;
@@ -115,28 +116,43 @@ public class ShenyuClientRegisterDivideServiceImpl extends AbstractContextPathRe
                 .map(dto -> CommonUpstreamUtils.buildDivideUpstream(dto.getProtocol(), dto.getHost(), dto.getPort()))
                 .collect(Collectors.toCollection(CopyOnWriteArrayList::new));
     }
-    
+
     @Override
     public String offline(final String selectorName, final List<URIRegisterDTO> uriList) {
         final SelectorService selectorService = getSelectorService();
-        SelectorDO selectorDO = selectorService.findByNameAndPluginName(selectorName, PluginNameAdapter.rpcTypeAdapter(rpcType()));
+        String pluginName = PluginNameAdapter.rpcTypeAdapter(rpcType());
+        SelectorDO selectorDO = selectorService.findByNameAndPluginName(selectorName, pluginName);
         if (Objects.isNull(selectorDO)) {
             return Constants.SUCCESS;
         }
-        List<URIRegisterDTO> validUriList = uriList.stream()
-                .filter(dto -> Objects.nonNull(dto.getPort()) && StringUtils.isNotBlank(dto.getHost()))
-                .collect(Collectors.toList());
-        final List<DivideUpstream> needToRemove = buildDivideUpstreamList(validUriList);
-        List<DivideUpstream> existList = GsonUtils.getInstance().fromCurrentList(selectorDO.getHandle(), DivideUpstream.class);
-        existList.removeAll(needToRemove);
-        final String handler = GsonUtils.getInstance().toJson(existList);
-        selectorDO.setHandle(handler);
-        SelectorData selectorData = selectorService.buildByName(selectorName, PluginNameAdapter.rpcTypeAdapter(rpcType()));
-        selectorData.setHandle(handler);
-        // update db
-        selectorService.updateSelective(selectorDO);
-        // publish change event.
-        getEventPublisher().publishEvent(new DataChangedEvent(ConfigGroupEnum.SELECTOR, DataEventTypeEnum.UPDATE, Collections.singletonList(selectorData)));
+        if (this.useShenyuClientDiscoveryMode(selectorDO.getId())) {
+            // 删除 对象 等等
+            List<URIRegisterDTO> validUriList = uriList.stream()
+                    .filter(dto -> Objects.nonNull(dto.getPort()) && StringUtils.isNotBlank(dto.getHost()))
+                    .collect(Collectors.toList());
+            final List<DivideUpstream> needToRemove = buildDivideUpstreamList(validUriList);
+//            List<DivideUpstream> existList = GsonUtils.getInstance().fromCurrentList(selectorDO.getHandle(), DivideUpstream.class);
+//            existList.removeAll(needToRemove);
+//            final String handler = GsonUtils.getInstance().toJson(existList);
+//            selectorDO.setHandle(handler);
+//            SelectorData selectorData = selectorService.buildByName(selectorName, PluginNameAdapter.rpcTypeAdapter(rpcType()));
+//            selectorData.setHandle(handler);
+//            // update db
+//            selectorService.updateSelective(selectorDO);
+//            // publish change event.
+//            getEventPublisher().publishEvent(new DataChangedEvent(ConfigGroupEnum.SELECTOR, DataEventTypeEnum.UPDATE, Collections.singletonList(selectorData)));
+
+            doRemoveAndSendEvent(needToRemove, selectorDO, pluginName);
+        }
         return Constants.SUCCESS;
+    }
+
+
+    private void doRemoveAndSendEvent(List<DivideUpstream> needToRemove, SelectorDO selectorDO, String pluginName) {
+        for (DivideUpstream divideUpstream : needToRemove) {
+            removeDiscoveryUpstream(selectorDO.getId(), divideUpstream.getUpstreamUrl());
+        }
+        DiscoverySyncData discoverySyncData = fetch(selectorDO.getId(), selectorDO.getName(), pluginName);
+        getEventPublisher().publishEvent(new DataChangedEvent(ConfigGroupEnum.DISCOVER_UPSTREAM, DataEventTypeEnum.UPDATE, Collections.singletonList(discoverySyncData)));
     }
 }

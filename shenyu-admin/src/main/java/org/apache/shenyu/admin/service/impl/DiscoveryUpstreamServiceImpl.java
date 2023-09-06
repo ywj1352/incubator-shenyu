@@ -38,6 +38,7 @@ import org.apache.shenyu.admin.utils.ShenyuResultMessage;
 import org.apache.shenyu.common.dto.DiscoverySyncData;
 import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
@@ -90,6 +91,13 @@ public class DiscoveryUpstreamServiceImpl implements DiscoveryUpstreamService {
                 ? update(discoveryUpstreamDTO) : create(discoveryUpstreamDTO);
     }
 
+    @Override
+    public int nativeCreateOrUpdate(DiscoveryUpstreamDTO discoveryUpstreamDTO) {
+        DiscoveryUpstreamDO discoveryUpstreamDO = DiscoveryUpstreamDO.buildDiscoveryUpstreamDO(discoveryUpstreamDTO);
+        return StringUtils.hasLength(discoveryUpstreamDTO.getId()) ?
+                discoveryUpstreamMapper.updateSelective(discoveryUpstreamDO) : discoveryUpstreamMapper.insert(discoveryUpstreamDO);
+    }
+
     /**
      * delete.
      *
@@ -126,6 +134,21 @@ public class DiscoveryUpstreamServiceImpl implements DiscoveryUpstreamService {
             discoverySyncData.setUpstreamDataList(discoveryUpstreamDataList);
             return discoverySyncData;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<DiscoveryUpstreamData> findBySelectorId(String selectorId) {
+        DiscoveryHandlerDO discoveryHandlerDO = discoveryHandlerMapper.selectBySelectorId(selectorId);
+        List<DiscoveryUpstreamDO> discoveryUpstreamDOS = discoveryUpstreamMapper.selectByDiscoveryHandlerId(discoveryHandlerDO.getId());
+        return discoveryUpstreamDOS.stream().map(DiscoveryTransfer.INSTANCE::mapToData).collect(Collectors.toList());
+    }
+
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteBySelectorIdAndUrl(String selectorId, String url) {
+        DiscoveryHandlerDO discoveryHandlerDO = discoveryHandlerMapper.selectBySelectorId(selectorId);
+        discoveryUpstreamMapper.deleteByUrl(discoveryHandlerDO.getId(), url);
     }
 
     /**

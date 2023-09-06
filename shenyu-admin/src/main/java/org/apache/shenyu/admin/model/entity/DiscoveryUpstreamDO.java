@@ -233,6 +233,7 @@ public class DiscoveryUpstreamDO extends BaseDO {
                     .discoveryHandlerId(item.getDiscoveryHandlerId())
                     .protocol(item.getProtocol())
                     .status(item.getStatus())
+                    .url(item.getUrl())
                     .weight(item.getWeight())
                     .props(item.getProps())
                     .dateUpdated(currentTime).build();

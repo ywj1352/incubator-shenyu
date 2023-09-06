@@ -25,6 +25,7 @@ import org.apache.shenyu.admin.model.entity.DiscoveryUpstreamDO;
 import org.apache.shenyu.admin.model.entity.ProxySelectorDO;
 import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 import org.apache.shenyu.common.dto.ProxySelectorData;
+import org.apache.shenyu.common.dto.convert.selector.WebSocketUpstream;
 import org.apache.shenyu.common.utils.GsonUtils;
 
 import java.util.Properties;
@@ -74,6 +75,16 @@ public enum DiscoveryTransfer {
         discoveryUpstreamData.setProps(discoveryUpstreamDO.getProps());
         discoveryUpstreamData.setDateUpdated(discoveryUpstreamDO.getDateUpdated());
         discoveryUpstreamData.setDateCreated(discoveryUpstreamDO.getDateCreated());
+        return discoveryUpstreamData;
+    }
+
+    public DiscoveryUpstreamData mapToData(WebSocketUpstream webSocketUpstream) {
+        DiscoveryUpstreamData discoveryUpstreamData = new DiscoveryUpstreamData();
+        discoveryUpstreamData.setWarmup(webSocketUpstream.getWarmup());
+        discoveryUpstreamData.setProtocol(webSocketUpstream.getProtocol());
+        discoveryUpstreamData.setStatus(webSocketUpstream.isStatus() ? 0 : 1);
+        discoveryUpstreamData.setWeight(webSocketUpstream.getWeight());
+        discoveryUpstreamData.setUrl(webSocketUpstream.getUrl());
         return discoveryUpstreamData;
     }
 
@@ -173,6 +184,18 @@ public enum DiscoveryTransfer {
      * @return DiscoveryUpstreamDTO
      */
     public DiscoveryUpstreamDTO mapToDTO(DiscoveryUpstreamDO discoveryUpstreamDO) {
+        DiscoveryUpstreamDTO discoveryUpstreamDTO = new DiscoveryUpstreamDTO();
+        discoveryUpstreamDTO.setProps(discoveryUpstreamDO.getProps());
+        discoveryUpstreamDTO.setStatus(discoveryUpstreamDO.getStatus());
+        discoveryUpstreamDTO.setUrl(discoveryUpstreamDO.getUrl());
+        discoveryUpstreamDTO.setDiscoveryHandlerId(discoveryUpstreamDO.getDiscoveryHandlerId());
+        discoveryUpstreamDTO.setProtocol(discoveryUpstreamDO.getProtocol());
+        discoveryUpstreamDTO.setId(discoveryUpstreamDO.getId());
+        discoveryUpstreamDTO.setWeight(discoveryUpstreamDO.getWeight());
+        return discoveryUpstreamDTO;
+    }
+
+    public DiscoveryUpstreamDTO mapToDTO(DiscoveryUpstreamData discoveryUpstreamDO) {
         DiscoveryUpstreamDTO discoveryUpstreamDTO = new DiscoveryUpstreamDTO();
         discoveryUpstreamDTO.setProps(discoveryUpstreamDO.getProps());
         discoveryUpstreamDTO.setStatus(discoveryUpstreamDO.getStatus());

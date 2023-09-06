@@ -19,22 +19,26 @@ package org.apache.shenyu.admin.service.register;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.shenyu.admin.listener.DataChangedEvent;
+import org.apache.shenyu.admin.discovery.DiscoveryMode;
+import org.apache.shenyu.admin.model.dto.DiscoveryHandlerDTO;
+import org.apache.shenyu.admin.model.dto.DiscoveryUpstreamDTO;
 import org.apache.shenyu.admin.model.dto.RuleConditionDTO;
 import org.apache.shenyu.admin.model.dto.RuleDTO;
 import org.apache.shenyu.admin.model.entity.SelectorDO;
 import org.apache.shenyu.admin.service.MetaDataService;
 import org.apache.shenyu.admin.service.RuleService;
 import org.apache.shenyu.admin.service.SelectorService;
+import org.apache.shenyu.admin.service.DiscoveryUpstreamService;
+import org.apache.shenyu.admin.service.DiscoveryService;
 import org.apache.shenyu.admin.service.impl.UpstreamCheckService;
 import org.apache.shenyu.admin.service.manager.RegisterApiDocService;
 import org.apache.shenyu.admin.utils.CommonUpstreamUtils;
 import org.apache.shenyu.admin.utils.ShenyuResultMessage;
 import org.apache.shenyu.common.constant.AdminConstants;
+import org.apache.shenyu.common.dto.DiscoverySyncData;
+import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 import org.apache.shenyu.common.dto.SelectorData;
 import org.apache.shenyu.common.dto.convert.selector.CommonUpstream;
-import org.apache.shenyu.common.enums.ConfigGroupEnum;
-import org.apache.shenyu.common.enums.DataEventTypeEnum;
 import org.apache.shenyu.common.enums.MatchModeEnum;
 import org.apache.shenyu.common.enums.OperatorEnum;
 import org.apache.shenyu.common.enums.ParamTypeEnum;
@@ -85,6 +89,15 @@ public abstract class AbstractShenyuClientRegisterServiceImpl extends FallbackSh
     private RegisterApiDocService registerApiDocService;
 
     /**
+     * the DiscoveryUpstreamService.
+     */
+    @Resource
+    private DiscoveryUpstreamService discoveryUpstreamService;
+
+    @Resource
+    private DiscoveryService discoveryService;
+
+    /**
      * Selector handler string.
      *
      * @param metaDataDTO the meta data dto
@@ -125,7 +138,9 @@ public abstract class AbstractShenyuClientRegisterServiceImpl extends FallbackSh
     public String register(final MetaDataRegisterDTO dto) {
         //handler plugin selector
         String selectorHandler = selectorHandler(dto);
-        String selectorId = selectorService.registerDefault(dto, PluginNameAdapter.rpcTypeAdapter(rpcType()), selectorHandler);
+        String pluginName = PluginNameAdapter.rpcTypeAdapter(rpcType());
+        String selectorId = selectorService.registerDefault(dto, pluginName, selectorHandler);
+        discoveryService.registerDefaultDiscovery(selectorId, pluginName);
         //handler selector rule
         String ruleHandler = ruleHandler();
         RuleDTO ruleDTO = buildRpcDefaultRuleDTO(selectorId, dto, ruleHandler);
@@ -158,7 +173,8 @@ public abstract class AbstractShenyuClientRegisterServiceImpl extends FallbackSh
         if (CollectionUtils.isEmpty(uriList)) {
             return "";
         }
-        SelectorDO selectorDO = selectorService.findByNameAndPluginName(selectorName, PluginNameAdapter.rpcTypeAdapter(rpcType()));
+        String pluginName = PluginNameAdapter.rpcTypeAdapter(rpcType());
+        SelectorDO selectorDO = selectorService.findByNameAndPluginName(selectorName, pluginName);
         if (Objects.isNull(selectorDO)) {
             throw new ShenyuException("doRegister Failed to execute,wait to retry.");
         }
@@ -166,17 +182,56 @@ public abstract class AbstractShenyuClientRegisterServiceImpl extends FallbackSh
         //upstreamCheckService.fetchUpstreamData();
         //update upstream
         List<URIRegisterDTO> validUriList = uriList.stream().filter(dto -> Objects.nonNull(dto.getPort()) && StringUtils.isNotBlank(dto.getHost())).collect(Collectors.toList());
+        //todo 需要在这里注意 divide , ws 插件 使用 proxyselector
         String handler = buildHandle(validUriList, selectorDO);
-        if (handler != null) {
+        if (handler != null && useShenyuClientDiscoveryMode(selectorDO.getId())) {
             selectorDO.setHandle(handler);
             SelectorData selectorData = selectorService.buildByName(selectorName, PluginNameAdapter.rpcTypeAdapter(rpcType()));
             selectorData.setHandle(handler);
-            // update db
-            selectorService.updateSelective(selectorDO);
-            // publish change event.
-            eventPublisher.publishEvent(new DataChangedEvent(ConfigGroupEnum.SELECTOR, DataEventTypeEnum.UPDATE, Collections.singletonList(selectorData)));
+            DiscoveryHandlerDTO discoveryHandlerDTO = discoveryService.findDiscoveryHandlerBySelectorId(selectorDO.getId());
+            for (DiscoveryUpstreamDTO discoveryUpstreamDTO : doDiscoveryRegisterUpstream(handler, selectorDO.getId(), selectorDO.getName(), pluginName)) {
+                discoveryUpstreamDTO.setDiscoveryHandlerId(discoveryHandlerDTO.getId());
+                discoveryUpstreamService.nativeCreateOrUpdate(discoveryUpstreamDTO);
+            }
         }
         return ShenyuResultMessage.SUCCESS;
+    }
+
+    /**
+     * doDiscoveryRegisterUpstream.
+     *
+     * @param handler handler
+     * @param handler selectorId
+     * @param handler pluginName
+     * @return DiscoveryUpstreamDTOs
+     */
+    protected List<DiscoveryUpstreamDTO> doDiscoveryRegisterUpstream(String handler, String selectorId, String selectorName, String pluginName) {
+        return Collections.emptyList();
+    }
+
+    /**
+     * useShenyuClientDiscoveryMode.
+     *
+     * @param selectorId selectorId
+     * @return boolean
+     */
+    protected boolean useShenyuClientDiscoveryMode(String selectorId) {
+        DiscoveryMode mode = selectorService.findSelectorDiscoveryModeBy(selectorId);
+        return DiscoveryMode.SHENYU_CLIENT.equals(mode);
+    }
+
+    protected void removeDiscoveryUpstream(String selectorId, String url) {
+        discoveryUpstreamService.deleteBySelectorIdAndUrl(selectorId, url);
+    }
+
+    protected DiscoverySyncData fetch(String selectorId, String selectorName, String pluginName) {
+        List<DiscoveryUpstreamData> discoveryUpstreamDataList = discoveryUpstreamService.findBySelectorId(selectorId);
+        DiscoverySyncData discoverySyncData = new DiscoverySyncData();
+        discoverySyncData.setUpstreamDataList(discoveryUpstreamDataList);
+        discoverySyncData.setPluginName(pluginName);
+        discoverySyncData.setSelectorId(selectorId);
+        discoverySyncData.setSelectorName(selectorName);
+        return discoverySyncData;
     }
 
     /**

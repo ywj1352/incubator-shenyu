@@ -19,10 +19,12 @@ package org.apache.shenyu.springboot.plugin.websocket;
 
 import org.apache.shenyu.common.config.ShenyuConfig;
 import org.apache.shenyu.plugin.api.context.ShenyuContextDecorator;
+import org.apache.shenyu.plugin.base.handler.DiscoveryUpstreamDataHandler;
 import org.apache.shenyu.plugin.base.handler.PluginDataHandler;
 import org.apache.shenyu.plugin.websocket.WebSocketPlugin;
 import org.apache.shenyu.plugin.websocket.context.WebSocketShenyuContextDecorator;
 import org.apache.shenyu.plugin.websocket.handler.WebSocketPluginDataHandler;
+import org.apache.shenyu.plugin.websocket.handler.WebSocketUpstreamDataHandler;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -54,9 +56,19 @@ public class WebSocketPluginConfiguration {
     }
 
     /**
+     * Websocket upstream data handler.
+     *
+     * @return the upstream data handler
+     */
+    @Bean
+    public DiscoveryUpstreamDataHandler websocketDiscoveryUpstreamDataHandler() {
+        return new WebSocketUpstreamDataHandler();
+    }
+
+    /**
      * Web socket plugin web socket plugin.
      *
-     * @param webSocketClient the web socket client
+     * @param webSocketClient  the web socket client
      * @param webSocketService the web socket service
      * @return the web socket plugin
      */

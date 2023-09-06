@@ -19,6 +19,7 @@ package org.apache.shenyu.admin.service;
 
 import org.apache.shenyu.admin.model.dto.DiscoveryUpstreamDTO;
 import org.apache.shenyu.common.dto.DiscoverySyncData;
+import org.apache.shenyu.common.dto.DiscoveryUpstreamData;
 
 import java.util.List;
 
@@ -31,6 +32,15 @@ public interface DiscoveryUpstreamService {
      * @return the string
      */
     String createOrUpdate(DiscoveryUpstreamDTO discoveryUpstreamDTO);
+
+
+    /**
+     * nativeCreateOrUpdate.
+     *
+     * @param discoveryUpstreamDTO discoveryUpstreamDTO
+     * @return effect rows
+     */
+    int nativeCreateOrUpdate(DiscoveryUpstreamDTO discoveryUpstreamDTO);
 
     /**
      * delete.
@@ -46,4 +56,20 @@ public interface DiscoveryUpstreamService {
      * @return DiscoverySyncDataList
      */
     List<DiscoverySyncData> listAll();
+
+
+    /**
+     * findBySelectorId.
+     *
+     * @param selectorId selectorId
+     * @return DiscoverySyncData
+     */
+    List<DiscoveryUpstreamData> findBySelectorId(String selectorId);
+
+    /**
+     *
+     * @param selectorId
+     * @param url
+     */
+    void deleteBySelectorIdAndUrl(String selectorId, String url);
 }

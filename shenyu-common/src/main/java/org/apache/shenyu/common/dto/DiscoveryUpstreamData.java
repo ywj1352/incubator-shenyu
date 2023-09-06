@@ -63,6 +63,11 @@ public class DiscoveryUpstreamData {
     private int weight;
 
     /**
+     * warmup.
+     */
+    private int warmup;
+
+    /**
      * props.
      */
     private String props;
@@ -228,5 +233,13 @@ public class DiscoveryUpstreamData {
      */
     public void setDateUpdated(final Timestamp dateUpdated) {
         this.dateUpdated = dateUpdated;
+    }
+
+    public int getWarmup() {
+        return warmup;
+    }
+
+    public void setWarmup(int warmup) {
+        this.warmup = warmup;
     }
 }

@@ -17,17 +17,16 @@
 
 package org.apache.shenyu.admin.discovery;
 
-import org.apache.commons.lang3.NotImplementedException;
+
+import java.util.Map;
 
 public class DiscoveryProcessorHolder {
 
-    private final DiscoveryProcessor defaultDiscoveryProcessor;
 
-    private final DiscoveryProcessor localDiscoveryProcessor;
+    private Map<DiscoveryMode, DiscoveryProcessor> map;
 
-    public DiscoveryProcessorHolder(final DiscoveryProcessor defaultDiscoveryProcessor, final DiscoveryProcessor localDiscoveryProcessor) {
-        this.defaultDiscoveryProcessor = defaultDiscoveryProcessor;
-        this.localDiscoveryProcessor = localDiscoveryProcessor;
+    public DiscoveryProcessorHolder(final Map<DiscoveryMode, DiscoveryProcessor> map) {
+        this.map = map;
     }
 
     /**
@@ -37,13 +36,7 @@ public class DiscoveryProcessorHolder {
      * @return DiscoveryProcessor
      */
     public DiscoveryProcessor chooseProcessor(final String mode) {
-        if (DiscoveryMode.LOCAL.name().equalsIgnoreCase(mode)) {
-            return localDiscoveryProcessor;
-        } else if (DiscoveryMode.ZOOKEEPER.name().equalsIgnoreCase(mode)) {
-            return defaultDiscoveryProcessor;
-        } else {
-            throw new NotImplementedException("shenyu discovery mode current didn't support " + mode);
-        }
+        return map.getOrDefault(DiscoveryMode.find(mode), map.get(DiscoveryMode.DEFAULT));
     }
 
 }

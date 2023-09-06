@@ -46,10 +46,6 @@ public class WebSocketPluginDataHandler implements PluginDataHandler {
     
     @Override
     public void handlerSelector(final SelectorData selectorData) {
-        List<WebSocketUpstream> upstreamList = GsonUtils.getInstance().fromList(selectorData.getHandle(), WebSocketUpstream.class);
-        if (CollectionUtils.isNotEmpty(upstreamList)) {
-            UpstreamCacheManager.getInstance().submit(selectorData.getId(), convertUpstreamList(upstreamList));
-        }
         if (!selectorData.getContinued()) {
             CACHED_HANDLE.get().cachedHandle(CacheKeyUtils.INST.getKey(selectorData.getId(), Constants.DEFAULT_RULE), WebSocketRuleHandle.newDefaultInstance());
         }
@@ -79,16 +75,4 @@ public class WebSocketPluginDataHandler implements PluginDataHandler {
         return PluginEnum.WEB_SOCKET.getName();
     }
     
-    private List<Upstream> convertUpstreamList(final List<WebSocketUpstream> upstreamList) {
-        return upstreamList.stream()
-                .map(u -> Upstream.builder()
-                        .protocol(u.getProtocol())
-                        .url(u.getUrl())
-                        .weight(u.getWeight())
-                        .status(u.isStatus())
-                        .timestamp(u.getTimestamp())
-                        .warmup(u.getWarmup())
-                        .build())
-                .collect(Collectors.toList());
-    }
 }
